@@ -165,7 +165,7 @@ function keysUI(t){ui.style.display='block';ui.innerHTML=`<h1>TOUCHES</h1><div s
  ui.onclick=e=>{const k=e.target.dataset.k;if(k){cap=k;keysUI(t)}else if(e.target.id=='rs'){B={...DB};try{delete localStorage.hb2}catch(_){}lbl();keysUI(t)}else if(e.target.id=='ok'){cap=null;M.ph=='menu'&&!M.pa?menu(t):pause(1)}}}
 function pause(v){M.pa=v;if(v){ui.style.display='block';ui.innerHTML=`<h1>PAUSE</h1><button class="bt" id="rp">▶ Reprendre</button><button class="bt g" id="ky">⌨ Touches</button><button class="bt g" id="mn">Menu</button>`;ui.onclick=e=>{if(e.target.id=='rp')pause(0);else if(e.target.id=='ky')keysUI();else if(e.target.id=='mn'){M.pa=0;M.ph='menu';menu()}}}else ui.style.display='none'}
 $('#pz').onclick=()=>{if(M.ph!='menu')pause(!M.pa)};
-Promise.all(CH.map(n=>IM[n].decode().catch(()=>0))).then(()=>menu());
+Promise.all(CH.map(n=>IM[n].decode().catch(()=>0))).then(()=>{cleanAll();menu();prewarm()});
 /* ===== ADD-ON v2 : fluidité · 10 attaques · ultis · histoire ===== */
 const LRP=(a,b,t)=>a+(b-a)*t,sr=i=>{const s=Math.sin(i*12.9898)*43758.5453;return s-Math.floor(s)};let AL=0,fx=[];
 const ST={hulk:{c:'#ff4422',c2:'#ffd860'},moon:{c:'#88bbff',c2:'#ffffff'},agatha:{c:'#aa44ff',c2:'#ff99ff'},sentry:{c:'#ffcc22',c2:'#fff2a0'},spider:{c:'#22ccff',c2:'#ccf6ff'}};
@@ -188,7 +188,7 @@ vm=function(k,v,ch){const b=C[ch][k];if(k=='S')return{...b,k,v:'n',nm:UN[ch]};co
 const GL={};function glow(X,Y,r,c,a){let g=GL[c];if(!g){g=GL[c]=document.createElement('canvas');g.width=g.height=64;const q=g.getContext('2d'),h=q.createRadialGradient(32,32,0,32,32,32);h.addColorStop(0,'#fff');h.addColorStop(.25,c);h.addColorStop(1,'#0000');q.fillStyle=h;q.fillRect(0,0,64,64)}
  x.save();x.globalCompositeOperation='lighter';x.globalAlpha=a;x.drawImage(g,X-r,Y-r,r*2,r*2);x.restore()}
 /* ---- effets visuels (aucun impact sur la simulation) ---- */
-const FX=(ty,X,Y,o)=>fx.push({ty,x:X,y:Y,t:0,l:20,...o}),AR={n:[-1.9,.9],f:[-1.2,.8],b:[-2.3,.4],u:[1.3,-2.1],d:[-.6,1.5]};
+const FX=(ty,X,Y,o)=>{fx.length>80&&fx.shift();fx.push({ty,x:X,y:Y,t:0,l:20,...o})},AR={n:[-1.9,.9],f:[-1.2,.8],b:[-2.3,.4],u:[1.3,-2.1],d:[-.6,1.5]};
 function FXA(f){const m=f.m,c=f.ch,S=ST[c],H=m.k=='Hv',v=m.v,d=f.face,w=m.w||120,X=f.x,Y=f.y-f.bh*.55;
  if(m.p){FX('rune',X+d*40,Y,{c:S.c,r:H?70:46,l:H?22:16,sp:d,sy:1});FX('burst',X+d*50,Y,{c:S.c2,r:H?60:36,n:10,s0:0,l:12});if(c=='spider'&&(H||v=='u'))FX('web',X+d*70,Y,{c:S.c,r:H?90:55,l:18});if(v=='d')FX('ring',X+d*60,f.y,{c:S.c,r:70,w:8,l:14})}
  else{const[a0,a1]=AR[v],up=v=='u',dn=v=='d',n=c=='moon'?3:1,cx=X+d*(up?10:w*.35),cy=up?f.y-f.bh*.9:dn?f.y-22:Y,r=up?w*.5+30:Math.max(55,w*.55);
@@ -227,11 +227,11 @@ function cin(q){const t=q.tk,A=q.a,T=q.t,c=A.ch,S=ST[c],X=T.x,Y=G,y0=Y-90,e=Math
  if(t>66){x.globalAlpha=Math.min(.9,(t-66)/10);x.fillStyle='#fff';x.fillRect(-300,-300,W+600,H+600)}
  x.restore()}
 /* ---- crochets dans la simulation (visuel uniquement) ---- */
-{const _u=upd;upd=function(){if(!M.pa&&M.ph!='menu')fx=fx.filter(e=>++e.t<e.l);for(const f of fs){f.px=f.x;f.py=f.y}for(const p of ps){p.px=p.x;p.py=p.y}_u()}}
+{const _u=upd;upd=function(){if(!M.pa&&M.ph!='menu')fx=fx.filter(e=>++e.t<e.l);if(pt.length>350)pt.splice(0,pt.length-350);for(const f of fs){f.px=f.x;f.py=f.y}for(const p of ps){p.px=p.x;p.py=p.y}_u()}}
 {const _n=nr;nr=function(){fx=[];_n()}}
 {const _a=atk;atk=function(f,o){const m=f.m;if(f.t==m.s&&m.k!='S'){FXA(f);if(m.k=='Hv')FX('txt',f.x,f.y-f.bh-20,{t0:m.nm,c:ST[f.ch].c2,l:40})}
  if((m.dash||m.lun)&&f.t>=m.s&&f.t<m.s+m.a&&f.t%2==0)FX('gh',f.x,f.y,{ch:f.ch,r:pose(f),k:C[f.ch].th/((f.fm&&D[f.ch].rh2)||D[f.ch].rh),d:f.face,l:10});_a(f,o)}}
-{const _h=hit;hit=function(a,t,d,kb,dir,s,v){const h=t.hp;if(!(kb>=0))kb=14;_h(a,t,d,kb,dir,s,v);if(t.hp<h){const S=ST[a.ch];FX('burst',t.x,t.y-t.bh*.6,{c:S.c2,r:28+d,n:8+(d/4|0),s0:R()*6,l:12});d>=18&&FX('ring',t.x,t.y,{c:S.c,r:60+d*2,w:10,l:18})}}}
+{const _h=hit;hit=function(a,t,d,kb,dir,s,v){const h=t.hp;_h(a,t,d,kb,dir,s,v);if(t.hp<h){const S=ST[a.ch];FX('burst',t.x,t.y-t.bh*.6,{c:S.c2,r:28+d,n:8+(d/4|0),s0:R()*6,l:12});d>=18&&FX('ring',t.x,t.y,{c:S.c,r:60+d*2,w:10,l:18})}}}
 {const _hu=hud;hud=function(){const q=M.cs;M.cs=null;_hu();M.cs=q;if(q){const t=q.tk,a=Math.min(1,t/8),g=x.createLinearGradient(0,0,W,0),S=ST[q.a.ch],ox=(1-a)*-200,s=UN[q.a.ch].toUpperCase(),s2=nm(q.a)+' · ULTI';
  g.addColorStop(0,'#0000');g.addColorStop(.2,S.c+'cc');g.addColorStop(.8,S.c+'cc');g.addColorStop(1,'#0000');x.save();x.globalAlpha=a;x.fillStyle=g;x.fillRect(0,150,W,96);x.textAlign='center';x.lineJoin='round';x.strokeStyle='#000';
  x.font='italic 900 56px sans-serif';x.lineWidth=8;x.fillStyle='#fff';x.strokeText(s,W/2+ox,222);x.fillText(s,W/2+ox,222);x.font='bold 22px sans-serif';x.lineWidth=5;x.fillStyle='#ffd23f';x.strokeText(s2,W/2+ox,184);x.fillText(s2,W/2+ox,184);x.restore()}}}
@@ -253,16 +253,37 @@ draw=function(){AL=Math.min(1,ac/16.67);const q=M.cs;x.imageSmoothingEnabled=fal
   for(const p of pt){x.globalAlpha=Math.min(1,p.l/12);x.fillStyle=p.c;x.fillRect(p.x,p.y,p.s,p.s)}x.globalAlpha=1;x.restore();hud();
   if(M.ph=='intro'||M.ph=='end'){x.textAlign='center';x.font='bold 84px sans-serif';x.strokeStyle='#000';x.lineWidth=8;x.fillStyle='#ffd23f';const t=M.ph=='end'?msg:pc>35?msg:'FIGHT !';x.strokeText(t,W/2,300);x.fillText(t,W/2,300)}}else x.restore()};
 /* ---- préchauffage du cache de sprites (évite les micro-saccades) ---- */
-Promise.all(CH.map(n=>IM[n].decode().catch(()=>0))).then(()=>{const J=[];for(const n of CH)for(const an in D[n].anims)for(const r of D[n].anims[an])J.push(()=>{SP(n,r,C[n].th/D[n].rh);D[n].rh2&&SP(n,r,C[n].th/D[n].rh2)});let i=0;(function w(){const t=performance.now();while(i<J.length&&performance.now()-t<6)J[i++]();i<J.length&&setTimeout(w,0)})()});
 /* ---- MODE HISTOIRE ---- */
 const S2={on:0,i:0,l:[],b:.8};
 function sIntro(msg){M.ph='menu';ui.style.display='block';const n=S2.l[S2.i],last=S2.i==S2.l.length-1;M.sel[1]=n;M.dif=S2.b*(1+.07*S2.i);
  ui.innerHTML=`<h1>HISTOIRE</h1><div>${msg||''}</div><h2>COMBAT ${S2.i+1} / ${S2.l.length}${last?' · FINAL (MIROIR)':''}</h2><div class="row">${card(n,1)}</div><div><button class="bt" id="sg">⚔ GO !</button><button class="bt g" id="sq">Quitter</button></div>`;thumbs();
  ui.onclick=e=>{if(e.target.id=='sg'){ui.style.display='none';fs=[mk(M.sel[0],340,1,0),mk(n,940,-1,1)];wins=[0,0];rd=1;M.pa=0;nr()}else if(e.target.id=='sq')menu()}}
-{const _m=menu;menu=function(t){if(S2.on){S2.on=0;M.dif=S2.b}_m(t);const g=$('#go');if(g){g.insertAdjacentHTML('afterend','<button class="bt" id="sty" style="background:#f6a">📖 HISTOIRE</button>');const o=ui.onclick;
- ui.onclick=e=>{if(e.target.id=='sty'){S2.on=1;S2.b=M.dif;const h=M.sel[0];S2.l=[...CH.filter(c=>c!=h),h];S2.i=0;sIntro('Bats les 5 héros — difficulté choisie dans le menu')}else o(e)}}}}
 {const _o=over;over=function(){if(!S2.on)return _o();if(wins[0]>wins[1]){S2.i++;if(S2.i>=S2.l.length){M.ph='menu';menu('🏆 HISTOIRE TERMINÉE — tu as battu les 5 héros !')}else sIntro('Victoire ! Combat suivant…')}
  else{M.ph='menu';ui.style.display='block';ui.innerHTML=`<h1>DÉFAITE…</h1><div>Combat ${S2.i+1} / ${S2.l.length}</div><button class="bt" id="rt">↻ Réessayer</button><button class="bt g" id="mq">Menu</button>`;ui.onclick=e=>{if(e.target.id=='rt')sIntro();else if(e.target.id=='mq')menu()}}}}
+
+/* ===== DÉFENSE : parade/esquive d'ulti, sortie de combo, ai ===== */
+{const _s=step;step=function(f,o){const I=f.inp,P=f.pi,e=k=>I[k]&&!P[k],was=f.st=='block';f.cb=(f.cb||0)-1;
+ if(f.st=='hurt'&&f.t<=10&&f.cb<=0&&f.dcd<=0&&(e('o')||e('b'))){f.cb=150;
+  if(e('o')){go(f,'dodge');f.dd=o.x>f.x?-1:1;f.dcd=30;f.inv=18;FX('txt',f.x,f.y-f.bh-20,{t0:'ESQUIVE !',c:'#88ffff',l:35})}
+  else{go(f,'idle');f.inv=10;f.vx=0;if(o.st=='atk'){go(o,'hurt');o.stn=26;o.vx=(o.x>f.x?1:-1)*8}hs=6;FX('txt',f.x,f.y-f.bh-20,{t0:'PARADE !',c:'#88ffff',l:35})}
+  FX('ring',f.x,f.y,{c:'#88ffff',r:90,w:8,l:16});sparks(f.x,f.y-60,'#8ff',14)}
+ _s(f,o);f.bt=f.st=='block'?(was?f.bt+1:0):99}}
+{const _ult=ult;ult=function(f,t){
+ if(t.inv>0){f.mt=Math.max(0,f.mt-50);sparks(t.x,t.y-70,'#8ff',16);FX('txt',t.x,t.y-t.bh-20,{t0:'ESQUIVE !',c:'#88ffff',l:40});hs=6;return}
+ if(t.st=='block'&&(t.bt==null?99:t.bt)<=14&&t.face==-f.face){f.mt=0;go(f,'hurt');f.stn=50;f.vx=-f.face*8;t.mt=Math.min(100,t.mt+25);FX('ring',t.x,t.y,{c:'#88ffff',r:130,w:12,l:20});FX('txt',t.x,t.y-t.bh-20,{t0:'PARADE PARFAITE !',c:'#ffd23f',l:45});hs=10;sk=10;return}
+ _ult(f,t)}}
+{const _ai=ai;ai=function(f,o){const I=_ai(f,o);if(f.st=='hurt'&&f.t<=10&&(f.cb||0)<=0&&R()<.04*M.dif){R()<.5?I.o=1:I.b=1}return I}}
+/* ===== NETTOYAGE DES SPRITES (détourage) ===== */
+function cleanSheet(n,passes){const im=IM[n],w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,cv2=document.createElement('canvas');cv2.width=w;cv2.height=h;const g=cv2.getContext('2d');g.drawImage(im,0,0);
+ const id=g.getImageData(0,0,w,h),d=id.data,N=w*h,bg=p=>{const r=d[p],gg=d[p+1],b=d[p+2],mx=Math.max(r,gg,b),mn=Math.min(r,gg,b);return(.299*r+.587*gg+.114*b>125&&(mx-mn)/(mx||1)<.45)||(gg>r+25&&gg>b+25)};
+ for(let k=0;k<passes;k++){const del=[];for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x,p=i*4;if(d[p+3]&&((x==0||!d[p-1])||(x==w-1||!d[p+7])||(y==0||!d[p-w*4+3])||(y==h-1||!d[p+w*4+3]))&&bg(p))del.push(p)}for(const p of del)d[p+3]=0}
+ const lab=new Int32Array(N),q=new Int32Array(N);let L=0;
+ for(let s=0;s<N;s++){if(!d[s*4+3]||lab[s])continue;L++;let a=0,b=0;q[b++]=s;lab[s]=L;while(a<b){const i=q[a++],x=i%w,y=(i/w)|0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=w||yy>=h)continue;const j=yy*w+xx;if(d[j*4+3]&&!lab[j]){lab[j]=L;q[b++]=j}}}
+  if(b<16)for(let t=0;t<b;t++)d[q[t]*4+3]=0}
+ g.putImageData(id,0,0);IM[n]=cv2}
+function cleanAll(){const P={hulk:4,moon:1,agatha:2,sentry:2,spider:2};for(const n of CH)try{cleanSheet(n,P[n])}catch(e){}}
+function prewarm(){const J=[];for(const n of CH)for(const an in D[n].anims)for(const r of D[n].anims[an])J.push(()=>{SP(n,r,C[n].th/D[n].rh);D[n].rh2&&SP(n,r,C[n].th/D[n].rh2)});let i=0;(function w(){const t=performance.now();while(i<J.length&&performance.now()-t<6)J[i++]();i<J.length&&setTimeout(w,0)})()}
+
 /* ===== MODE EN LIGNE (PeerJS + lockstep) ===== */
 const NET={on:0,me:0,conn:null,f:0,D:5,loc:{},rem:{},hs:{},warn:0};
 const BITS=['l','r','d','u','j','a','h','b','s','o'];
@@ -281,14 +302,34 @@ function netSetup(c){NET.conn=c;NET.on=1;NET.f=0;NET.loc={};NET.rem={};NET.hs={}
   else if(d.t=='h'&&NET.hs[d.f]!==undefined&&NET.hs[d.f]!==d.h&&!NET.warn){NET.warn=1;alert('Désynchronisation détectée')}});
  c.on('close',()=>{if(NET.on)netStop(M.ph=='end'?'Match terminé':'Adversaire déconnecté')})}
 function netHost(key){const p=new Peer('hbrawl-'+key);NET.me=0;
- p.on('error',e=>alert(e.type=='unavailable-id'?'Cette clé est déjà utilisée, choisis-en une autre':'Erreur réseau : '+e.type));
+ p.on('error',e=>{alert(e.type=='unavailable-id'?'Cette clé est déjà utilisée, choisis-en une autre':'Erreur réseau : '+e.type);sub('net')});
  p.on('open',()=>{ui.innerHTML='<h1>EN ATTENTE…</h1><div>Dis à ton ami de cliquer sur « Rejoindre » et de taper la clé :</div><h1>'+key+'</h1><button class="bt g" id="nc">Annuler</button>';ui.onclick=e=>{if(e.target.id=='nc'){p.destroy();menu()}}});
  p.on('connection',c=>netSetup(c))}
 function netJoin(key){const p=new Peer();NET.me=1;
- p.on('error',e=>alert(e.type=='peer-unavailable'?'Aucune partie avec cette clé':'Erreur réseau : '+e.type));
+ p.on('error',e=>{alert(e.type=='peer-unavailable'?'Aucune partie avec cette clé':'Erreur réseau : '+e.type);sub('net')});
  p.on('open',()=>{ui.innerHTML='<h1>CONNEXION…</h1>';const c=p.connect('hbrawl-'+key,{reliable:true});netSetup(c);c.on('open',()=>c.send({t:'hello',ch:M.sel[0]}))})}
-{const _m=menu;menu=function(t){_m(t);const g=$('#go');if(g){g.insertAdjacentHTML('afterend','<button class="bt" id="nh" style="background:#5d9">🌐 CRÉER (clé)</button><button class="bt" id="nj" style="background:#5d9">🌐 REJOINDRE (clé)</button>');
- const o=ui.onclick;ui.onclick=e=>{if(e.target.id=='nh'||e.target.id=='nj'){if(typeof Peer=='undefined'){alert('PeerJS non chargé (connexion internet ?)');return}const k=(prompt('Clé de la partie (ex : tacle42)')||'').trim().replace(/[^\w-]/g,'');if(!k)return;e.target.id=='nh'?netHost(k):netJoin(k)}else o(e)}}}}
 {const _p=pause;pause=function(v){if(NET.on){if(v&&confirm('Quitter le match en ligne ?'))netStop('Match quitté');return}_p(v)}}
 {const _o=over;over=function(){if(NET.on){const w=wins[NET.me]>wins[1-NET.me];netStop(w?'🏆 Victoire !':'💀 Défaite…');return}_o()}}
+
+/* ===== ÉQUILIBRAGE ===== */
+const BAL={hulk:{hp:.84,d:.93},moon:{hp:1.15,d:1.2},agatha:{hp:1.25,d:1.3},sentry:{hp:.95,d:.94},spider:{hp:1.08,d:1.08}};
+for(const n in BAL){const c=C[n],b=BAL[n];c.hp=Math.round(c.hp*b.hp);for(const k of['L','Hv','S'])c[k].d=Math.round(c[k].d*b.d*10)/10}
+
+/* ===== MENUS : principal / IA / multi / histoire ===== */
+let KEY='';
+function menu(t){if(S2.on){S2.on=0;M.dif=S2.b}M.ph='menu';ui.style.display='block';const B2='font-size:20px;padding:16px 34px;display:block;margin:12px auto;min-width:300px';
+ ui.innerHTML=`<h1>HEROES BRAWL</h1><div>${t||'Choisis ton mode de jeu'}</div><div style="margin-top:26px"><button class="bt" id="m1" style="${B2}">⚔ COMBAT IA</button><button class="bt" id="m2" style="${B2};background:#5d9">🌐 COMBAT MULTI (clé)</button><button class="bt" id="m3" style="${B2};background:#f6a">📖 HISTOIRE</button><button class="bt g" id="ky">⌨ Touches</button></div>`;
+ ui.onclick=e=>{const i=e.target.id;if(i=='m1')sub('ia');else if(i=='m2')sub('net');else if(i=='m3')sub('st');else if(i=='ky')keysUI(t)}}
+function sub(m){const T={ia:'COMBAT IA',net:'COMBAT MULTI',st:'MODE HISTOIRE'},dif=`<h2>DIFFICULTÉ IA</h2><div class="row">${[['Facile',.45],['Normal',.8],['Difficile',1.4]].map(([l,v])=>`<button class="bt${M.dif==v?'':' g'}" data-d="${v}">${l}</button>`).join('')}</div>`,bk='<button class="bt g" id="bk">← Retour</button>';
+ let h=`<h1>${T[m]}</h1><h2>TON HÉROS</h2><div class="row">${CH.map(n=>card(n,0)).join('')}</div>`;
+ if(m=='ia')h+=`<h2>HÉROS DE L'IA</h2><div class="row">${CH.map(n=>card(n,1)).join('')}</div>${dif}<div><button class="bt" id="g1">⚔ COMBATTRE</button>${bk}</div>`;
+ else if(m=='st')h+=`${dif}<div style="font-size:13px;color:#89a">Affronte les 4 autres héros puis ton miroir · l'IA se renforce à chaque combat</div><div><button class="bt" id="g2">📖 COMMENCER</button>${bk}</div>`;
+ else h+=`<h2>CLÉ DE LA PARTIE</h2><input id="key" maxlength="24" placeholder="ex : tacle-8f3k2" value="${KEY}" onkeydown="event.stopPropagation()" style="font:700 18px system-ui;padding:10px;border-radius:8px;border:2px solid #345;background:#101830;color:#fff;text-align:center;user-select:text;-webkit-user-select:text"><div><button class="bt" id="nh" style="background:#5d9">🌐 CRÉER</button><button class="bt" id="nj" style="background:#5d9">🌐 REJOINDRE</button>${bk}</div><div style="font-size:12px;color:#89a">L'un crée avec une clé, l'autre rejoint avec la même clé</div>`;
+ ui.innerHTML=h;thumbs();
+ ui.onclick=e=>{const c=e.target.closest('.cd'),d=e.target.closest('[data-d]'),i=e.target.id;
+  if(c){M.sel[c.dataset.i]=c.dataset.n;sub(m)}else if(d){M.dif=+d.dataset.d;sub(m)}else if(i=='bk')menu();
+  else if(i=='g1'){ui.style.display='none';fs=[mk(M.sel[0],340,1,0),mk(M.sel[1],940,-1,1)];wins=[0,0];rd=1;M.pa=0;nr()}
+  else if(i=='g2'){S2.on=1;S2.b=M.dif;const hh=M.sel[0];S2.l=[...CH.filter(q=>q!=hh),hh];S2.i=0;sIntro('Bats les 5 héros')}
+  else if(i=='nh'||i=='nj'){const k=(($('#key').value)||'').trim().replace(/[^\w-]/g,'');if(!k){alert('Entre une clé');return}if(typeof Peer=='undefined'){alert('PeerJS non chargé (connexion internet ?)');return}KEY=k;i=='nh'?netHost(k):netJoin(k)}}}
+
 </script></body></html>
